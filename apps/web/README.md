@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Punchcard web (`apps/web`)
 
-## Getting Started
-
-First, run the development server:
+Next.js 16 App Router: the marketing site (`app/(marketing)`) and the API the Expo app talks to (`app/api`). Deployed to Vercel with root directory `apps/web`.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm dev            # http://localhost:3600 (PGlite in .pglite/ when DATABASE_URL is unset)
+pnpm test           # Vitest, in-memory PGlite per test file
+pnpm db:generate    # new migration in drizzle/ after editing lib/db/schema.ts
+pnpm db:migrate     # apply drizzle/ to DATABASE_URL (or .pglite/)
+pnpm tokens:css     # regenerate app/tokens.css from packages/shared/src/tokens.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All bodies are JSON. "Session" means a Better Auth session: the Expo client (`@better-auth/expo`) sends `Cookie: punchcard.session_token=...`; anything else gets `401 {"error":"unauthorized"}`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Auth | Purpose |
+| --- | --- | --- |
+| `/api/auth/*` | Better Auth | Email + password sign-up/sign-in, sessions, `POST /api/auth/delete-user` (cascades all server data) |
+| `POST /api/sync/push` | Session | `SyncPushRequest` from `@punchcard/shared` -> `{ serverTime, accepted }`; last write wins on `rowVersion` |
+| `GET /api/sync/pull?since=` | Session | Rows changed on the server after `since` -> `{ serverTime, tables }`; `serverTime` is the next `since` |
+| `POST /api/devices` | Session | Register an Expo push token `{ token, platform }` |
+| `DELETE /api/devices/:token` | Session | Unregister the caller's token |
+| `GET /api/me/plan` | Session | `{ plan, expiresAt, source }` from the RevenueCat mirror |
+| `POST /api/webhooks/revenuecat` | `Authorization: Bearer $REVENUECAT_WEBHOOK_SECRET` | Idempotent by event id; purchases/renewals grant Pro until expiry |
+| `GET /api/cron/daily` | `Authorization: Bearer $CRON_SECRET` | Keep-alive query; Mondays send last week's summary push |
+| `GET /api/health` | None | Liveness |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Merge and cursor rules are documented in `lib/sync/contract.ts`. Tables live in the `punchcard` Postgres schema (`lib/db/schema.ts`).

@@ -1,0 +1,109 @@
+/* Generated from packages/shared/src/tokens.ts by `pnpm tokens:css`. Do not edit by hand. */
+
+:root {
+  color-scheme: light;
+  --pc-color-surface: #F4F1EA;
+  --pc-color-surface-elevated: #FFFDF8;
+  --pc-color-surface-sunken: #E8E3D7;
+  --pc-color-text: #15171A;
+  --pc-color-text-secondary: #555D68;
+  --pc-color-text-tertiary: #868D97;
+  --pc-color-accent: #FF6A1A;
+  --pc-color-accent-pressed: #E85A0C;
+  --pc-color-accent-soft: #FFE2CF;
+  --pc-color-accent-text: #A33E05;
+  --pc-color-on-accent: #15171A;
+  --pc-color-success: #1C7A43;
+  --pc-color-warning: #966210;
+  --pc-color-danger: #B4302A;
+  --pc-color-separator: #DAD4C6;
+  --pc-color-border: #C6BFAF;
+  --pc-space-xs: 4px;
+  --pc-space-sm: 8px;
+  --pc-space-md: 16px;
+  --pc-space-lg: 24px;
+  --pc-space-xl: 32px;
+  --pc-space-xxl: 48px;
+  --pc-radius-sm: 8px;
+  --pc-radius-md: 12px;
+  --pc-radius-lg: 20px;
+  --pc-radius-pill: 999px;
+  --pc-font-size-display: 56px;
+  --pc-line-height-display: 64px;
+  --pc-font-weight-display: 600;
+  --pc-letter-spacing-display: -1.5px;
+  --pc-font-size-title: 28px;
+  --pc-line-height-title: 34px;
+  --pc-font-weight-title: 700;
+  --pc-letter-spacing-title: -0.4px;
+  --pc-font-size-headline: 20px;
+  --pc-line-height-headline: 26px;
+  --pc-font-weight-headline: 600;
+  --pc-letter-spacing-headline: -0.2px;
+  --pc-font-size-body: 17px;
+  --pc-line-height-body: 22px;
+  --pc-font-weight-body: 400;
+  --pc-letter-spacing-body: -0.2px;
+  --pc-font-size-callout: 15px;
+  --pc-line-height-callout: 20px;
+  --pc-font-weight-callout: 400;
+  --pc-letter-spacing-callout: -0.1px;
+  --pc-font-size-caption: 13px;
+  --pc-line-height-caption: 18px;
+  --pc-font-weight-caption: 500;
+  --pc-letter-spacing-caption: 0px;
+  --pc-duration-fast: 150ms;
+  --pc-duration-base: 250ms;
+  --pc-duration-slow: 400ms;
+  --pc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --pc-ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  --pc-shadow-sm: 0 1px 2px 0px rgb(21 23 26 / 0.08);
+  --pc-shadow-md: 0 6px 16px -4px rgb(21 23 26 / 0.16);
+  --pc-shadow-lg: 0 18px 40px -12px rgb(21 23 26 / 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --pc-color-surface: #15171A;
+    --pc-color-surface-elevated: #1F2226;
+    --pc-color-surface-sunken: #0F1113;
+    --pc-color-text: #F2EFE8;
+    --pc-color-text-secondary: #9CA4AE;
+    --pc-color-text-tertiary: #6C737C;
+    --pc-color-accent: #FF7E3A;
+    --pc-color-accent-pressed: #FF9459;
+    --pc-color-accent-soft: #3B2417;
+    --pc-color-accent-text: #FF8C4E;
+    --pc-color-success: #46C47E;
+    --pc-color-warning: #E8A93F;
+    --pc-color-danger: #FF6E61;
+    --pc-color-separator: #2C3035;
+    --pc-color-border: #3A3F45;
+    --pc-shadow-sm: 0 1px 2px 0px rgb(21 23 26 / 0.4);
+    --pc-shadow-md: 0 6px 16px -4px rgb(21 23 26 / 0.5);
+    --pc-shadow-lg: 0 18px 40px -12px rgb(21 23 26 / 0.6);
+  }
+}
+
+.dark {
+  color-scheme: dark;
+  --pc-color-surface: #15171A;
+  --pc-color-surface-elevated: #1F2226;
+  --pc-color-surface-sunken: #0F1113;
+  --pc-color-text: #F2EFE8;
+  --pc-color-text-secondary: #9CA4AE;
+  --pc-color-text-tertiary: #6C737C;
+  --pc-color-accent: #FF7E3A;
+  --pc-color-accent-pressed: #FF9459;
+  --pc-color-accent-soft: #3B2417;
+  --pc-color-accent-text: #FF8C4E;
+  --pc-color-success: #46C47E;
+  --pc-color-warning: #E8A93F;
+  --pc-color-danger: #FF6E61;
+  --pc-color-separator: #2C3035;
+  --pc-color-border: #3A3F45;
+  --pc-shadow-sm: 0 1px 2px 0px rgb(21 23 26 / 0.4);
+  --pc-shadow-md: 0 6px 16px -4px rgb(21 23 26 / 0.5);
+  --pc-shadow-lg: 0 18px 40px -12px rgb(21 23 26 / 0.6);
+}
