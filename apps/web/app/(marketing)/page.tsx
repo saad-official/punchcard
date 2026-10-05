@@ -3,6 +3,7 @@ import { ComparisonTable } from "@/components/marketing/comparison-table";
 import { FaqList } from "@/components/marketing/faq";
 import { Features } from "@/components/marketing/features";
 import { HeroDevice } from "@/components/marketing/hero-device";
+import { ProductVideo } from "@/components/marketing/product-video";
 import { StoreButtons } from "@/components/marketing/store-buttons";
 import { TimeCard } from "@/components/marketing/time-card";
 import { FAQS, FREE_LIMITS, PRICES } from "@/lib/marketing/content";
@@ -40,6 +41,10 @@ export default function HomePage() {
           </p>
         </div>
         <HeroDevice />
+      </section>
+
+      <section aria-label="Product preview" className="mx-auto max-w-[1200px] px-4 pt-16 md:px-8 md:pt-24">
+        <ProductVideo />
       </section>
 
       <Section
