@@ -3,6 +3,8 @@
 import type { Client, ClientColor, Entry } from '@punchcard/shared';
 
 export type {
+  Appearance,
+  BusinessDetails,
   Client,
   ClientColor,
   Entry,

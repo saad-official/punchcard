@@ -152,4 +152,7 @@ function setJobFlag(id: string, field: 'archivedAt' | 'deletedAt', value: string
 
 export const archiveJob = (id: string) => setJobFlag(id, 'archivedAt', nowIso());
 export const unarchiveJob = (id: string) => setJobFlag(id, 'archivedAt', null);
+/** Soft delete. Past entries keep the job name on their timesheets. */
 export const deleteJob = (id: string) => setJobFlag(id, 'deletedAt', nowIso());
+/** Undo for `deleteJob`. */
+export const restoreJob = (id: string) => setJobFlag(id, 'deletedAt', null);

@@ -6,24 +6,24 @@ import { PrimaryButton } from '@/components/primary-button';
 import { Screen } from '@/components/screen';
 import { SectionFooter } from '@/components/section-header';
 import { showToast } from '@/components/toast';
-import { getPreferences, setPreferences } from '@/hooks/use-preferences';
+import { getSetting, setSetting } from '@/data';
 import * as haptics from '@/native/haptics';
 
 /** Business name and contact printed on branded (Pro) PDF timesheets. */
 export function BusinessScreen() {
-  const [initial] = useState(getPreferences);
-  const [name, setName] = useState(initial.businessName);
-  const [phone, setPhone] = useState(initial.businessPhone);
-  const [email, setEmail] = useState(initial.businessEmail);
+  const [initial] = useState(() => getSetting('business'));
+  const [name, setName] = useState(initial.name);
+  const [phone, setPhone] = useState(initial.phone);
+  const [email, setEmail] = useState(initial.email);
   const emailInvalid = !!email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim());
-  const dirty = name !== initial.businessName || phone !== initial.businessPhone || email !== initial.businessEmail;
+  const dirty = name !== initial.name || phone !== initial.phone || email !== initial.email;
 
   const save = () => {
     if (emailInvalid) {
       haptics.warning();
       return;
     }
-    setPreferences({ businessName: name.trim(), businessPhone: phone.trim(), businessEmail: email.trim() });
+    setSetting('business', { name: name.trim(), phone: phone.trim(), email: email.trim() });
     haptics.success();
     showToast({ message: 'Business details saved' });
     router.back();

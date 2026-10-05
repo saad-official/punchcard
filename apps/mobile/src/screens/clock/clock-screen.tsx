@@ -20,6 +20,7 @@ import { compactDuration, formatDayShort, money } from '@/constants/format';
 import { dayRange, earningsFor, getClient, type Client, type EntryWithClient } from '@/data';
 import { useClients } from '@/hooks/use-clients';
 import { useEntries, useRecentClientIds } from '@/hooks/use-entries';
+import { useIsRunning } from '@/hooks/use-is-running';
 import { useNowSeconds } from '@/hooks/use-now';
 import { useSettings } from '@/hooks/use-settings';
 import { useTodayTotals } from '@/hooks/use-today-totals';
@@ -70,7 +71,7 @@ export function ClockScreen() {
   const recentRange = { from: dayRange(new Date(now.getTime() - 30 * DAY_MS)).from, to: today.to };
   const recentEntries = useEntries(recentRange);
 
-  const runningEntry = todays.find((e) => !e.endedAt) ?? null;
+  const isRunning = useIsRunning();
   const finished = todays.filter((e) => !!e.endedAt);
 
   const quick: QuickStart[] = recentIds
@@ -83,7 +84,7 @@ export function ClockScreen() {
   const primary = quick[0] ?? null;
 
   const onClockPress = () => {
-    if (runningEntry) stopClock();
+    if (isRunning) stopClock();
     else if (primary) startClock(primary.client.id, primary.jobId);
     else if (clients.length) router.push({ pathname: '/client-picker', params: { mode: 'start' } });
     else router.push('/client-editor');
@@ -93,7 +94,7 @@ export function ClockScreen() {
     <>
       <Stack.Screen options={{ title: formatDayShort(now) }} />
       <Screen>
-        {runningEntry ? (
+        {isRunning ? (
           <RunningCard />
         ) : (
           <Animated.View layout={LAYOUT} style={{ gap: spacing.xs, paddingTop: spacing.sm }}>
@@ -110,7 +111,7 @@ export function ClockScreen() {
           </Animated.View>
         )}
 
-        {clients.length === 0 && !runningEntry ? (
+        {clients.length === 0 && !isRunning ? (
           <EmptyState
             icon={{ sf: 'person.crop.circle.badge.plus', md: 'person_add' }}
             title="No clients yet"
@@ -120,16 +121,16 @@ export function ClockScreen() {
         ) : (
           <Animated.View layout={LAYOUT}>
             <ClockButton
-              running={!!runningEntry}
+              running={isRunning}
               startLabel={primary ? 'Start' : 'Choose client'}
               startCaption={primary ? [primary.client.name, primary.jobName].filter(Boolean).join(' · ') : undefined}
-              accessibilityHint={runningEntry ? 'Stops the clock and saves the entry' : undefined}
+              accessibilityHint={isRunning ? 'Stops the clock and saves the entry' : undefined}
               onPress={onClockPress}
             />
           </Animated.View>
         )}
 
-        {!runningEntry && quick.length > 0 ? (
+        {!isRunning && quick.length > 0 ? (
           <Animated.View layout={LAYOUT} style={{ gap: spacing.sm }}>
             {quick.length > 1 ? <SectionHeader title="Quick start" /> : null}
             {quick.slice(1).map((q) => (

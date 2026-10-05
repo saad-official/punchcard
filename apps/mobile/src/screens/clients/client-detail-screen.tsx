@@ -1,7 +1,7 @@
 import { elapsedSeconds, weekRange } from '@punchcard/shared';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { ClientBar } from '@/components/client-bar';
@@ -22,6 +22,7 @@ import {
   createJob,
   dayRange,
   deleteJob,
+  restoreJob,
   deviceTimeZone,
   earningsFor,
   renameJob,
@@ -250,18 +251,12 @@ function JobRow({ job }: { job: Job }) {
               title: 'Delete',
               sf: 'trash',
               destructive: true,
-              onPress: () =>
-                Alert.alert(`Delete ${job.name}?`, 'Entries already logged keep this job name on their timesheets.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                      deleteJob(job.id);
-                      haptics.warning();
-                    },
-                  },
-                ]),
+              // Soft delete with an undo toast, like entries (entries keep the job name).
+              onPress: () => {
+                deleteJob(job.id);
+                haptics.warning();
+                showToast({ message: `Deleted ${job.name}`, actionLabel: 'Undo', onAction: () => restoreJob(job.id) });
+              },
             },
           ]}
         />

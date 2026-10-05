@@ -53,3 +53,8 @@ export function setLastPulledAt(table: SyncedTable, serverTime: string): void {
     .run();
   notifyTables('sync_state');
 }
+
+/** Forget every cursor and dirty id (used by `deleteAllData`; the next pull is a full pull). */
+export function resetSyncState(ex: Executor): void {
+  ex.delete(syncState).run();
+}

@@ -1,5 +1,5 @@
 import { Host, Slider, Switch } from '@expo/ui';
-import { canAddClient, CLIENT_PALETTE, gate, minorUnitDigits, type ClientColor } from '@punchcard/shared';
+import { canAddClient, CLIENT_PALETTE, formatCoordinates, gate, minorUnitDigits, type ClientColor } from '@punchcard/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
@@ -8,6 +8,7 @@ import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { FormField, TextField } from '@/components/form-field';
 import { FormSheet } from '@/components/form-sheet';
+import { Icon } from '@/components/icon';
 import { PrimaryButton } from '@/components/primary-button';
 import { openPaywall, ProBadge } from '@/components/pro-badge';
 import { Select } from '@/components/select';
@@ -17,6 +18,7 @@ import { currencyOptions, GEOFENCE_RADIUS } from '@/constants/app';
 import { countActiveClients, createClient, getClient, listGeofencedClients, updateClient, type Client } from '@/data';
 import { useClients } from '@/hooks/use-clients';
 import { useSettings } from '@/hooks/use-settings';
+import { currentPosition, geocodeAddress, GeocodeError, type GeocodedPlace } from '@/native/geocode';
 import { requestAlwaysPermission, syncGeofences } from '@/native/geofence';
 import * as haptics from '@/native/haptics';
 import { usePlan } from '@/native/purchases';
@@ -35,6 +37,18 @@ function inputToCents(text: string, currency: string): number | null {
   return Math.round(n * 10 ** minorUnitDigits(currency));
 }
 
+/** A resolved site pin; `query` is the address text it was resolved for (stale once edited). */
+type SitePin = GeocodedPlace & { query: string };
+
+type SiteError = { message: string; openSettings: boolean };
+
+function siteErrorFrom(error: unknown): SiteError {
+  if (error instanceof GeocodeError) {
+    return { message: error.message, openSettings: error.reason === 'permission' && !error.canAskAgain };
+  }
+  return { message: "Couldn't look that up. Try again.", openSettings: false };
+}
+
 /** New client (`/client-editor`) or edit (`/client-editor?id=`). */
 export function ClientEditorSheet() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -51,6 +65,18 @@ export function ClientEditorSheet() {
   const [currency, setCurrency] = useState(original?.currency ?? settings.currency);
   const [rate, setRate] = useState(original ? centsToInput(original.hourlyRateCents, original.currency) : '');
   const [address, setAddress] = useState(original?.address ?? '');
+  const [site, setSite] = useState<SitePin | null>(() =>
+    original && original.lat != null && original.lng != null
+      ? {
+          lat: original.lat,
+          lng: original.lng,
+          label: original.address || formatCoordinates(original.lat, original.lng),
+          query: original.address ?? '',
+        }
+      : null,
+  );
+  const [locating, setLocating] = useState<'address' | 'here' | null>(null);
+  const [siteError, setSiteError] = useState<SiteError | null>(null);
   const [fenceOn, setFenceOn] = useState(!!original?.geofenceRadiusM);
   const [fenceRadius, setFenceRadius] = useState(original?.geofenceRadiusM ?? GEOFENCE_RADIUS.default);
   const [permissionNote, setPermissionNote] = useState<string | null>(null);
@@ -104,6 +130,50 @@ export function ClientEditorSheet() {
     );
   };
 
+  const findAddress = async () => {
+    const query = address.trim();
+    if (!query || locating) return;
+    setLocating('address');
+    setSiteError(null);
+    try {
+      const place = await geocodeAddress(query);
+      if (place) {
+        haptics.tapLight();
+        setSite({ ...place, query });
+      } else {
+        haptics.warning();
+        setSiteError({ message: 'No match for that address. Add the suburb or postcode, or use your current location.', openSettings: false });
+      }
+    } catch (error) {
+      haptics.warning();
+      setSiteError(siteErrorFrom(error));
+    } finally {
+      setLocating(null);
+    }
+  };
+
+  const pinCurrentLocation = async () => {
+    if (locating) return;
+    setLocating('here');
+    setSiteError(null);
+    try {
+      const place = await currentPosition();
+      const hasStreetLabel = place.label !== formatCoordinates(place.lat, place.lng);
+      // Fill an empty address so timesheets show where the site is.
+      const fill = !address.trim() && hasStreetLabel;
+      if (fill) setAddress(place.label);
+      haptics.tapLight();
+      setSite({ ...place, query: fill ? place.label : address.trim() });
+    } catch (error) {
+      haptics.warning();
+      setSiteError(siteErrorFrom(error));
+    } finally {
+      setLocating(null);
+    }
+  };
+
+  const siteStale = !!site && address.trim() !== site.query;
+
   const save = () => {
     setSubmitted(true);
     if (!valid || rateCents === null) {
@@ -116,6 +186,8 @@ export function ClientEditorSheet() {
       hourlyRateCents: rateCents,
       currency,
       address: address.trim() || null,
+      lat: site?.lat ?? null,
+      lng: site?.lng ?? null,
       geofenceRadiusM: canGeofence && fenceOn ? Math.round(fenceRadius) : null,
     };
     try {
@@ -175,16 +247,91 @@ export function ClientEditorSheet() {
         </FormField>
       </View>
 
-      <FormField label="Site address" hint="Optional. Printed on timesheets.">
+      <FormField label="Site address" hint="Optional. Printed on timesheets; find it to pin the job site.">
         <TextField
           value={address}
           onChangeText={setAddress}
           placeholder="12 Harbour St"
           autoCapitalize="words"
           maxLength={300}
+          returnKeyType="search"
+          onSubmitEditing={() => void findAddress()}
           accessibilityLabel="Site address"
         />
       </FormField>
+
+      <View style={{ gap: spacing.sm }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <PrimaryButton
+            title="Find address"
+            variant="secondary"
+            size="sm"
+            block={false}
+            icon={{ sf: 'magnifyingglass', md: 'search' }}
+            loading={locating === 'address'}
+            disabled={!address.trim() || locating !== null}
+            accessibilityHint="Looks up the address and pins the job site"
+            onPress={() => void findAddress()}
+          />
+          <PrimaryButton
+            title="Use my current location"
+            variant="ghost"
+            size="sm"
+            block={false}
+            icon={{ sf: 'location', md: 'my_location' }}
+            loading={locating === 'here'}
+            disabled={locating !== null}
+            accessibilityHint="Pins the job site where you are standing"
+            onPress={() => void pinCurrentLocation()}
+          />
+        </View>
+
+        {siteError ? (
+          <View style={{ gap: spacing.sm }}>
+            <AppText variant="caption" tone="warning" selectable>
+              {siteError.message}
+            </AppText>
+            {siteError.openSettings ? (
+              <PrimaryButton title="Open Settings" variant="secondary" size="sm" block={false} onPress={() => Linking.openSettings()} />
+            ) : null}
+          </View>
+        ) : null}
+
+        {site ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.md,
+              padding: spacing.md,
+              borderRadius: radius.md,
+              borderCurve: 'continuous',
+              backgroundColor: colors.surfaceElevated,
+            }}
+          >
+            <Icon sf="mappin.and.ellipse" md="location_on" color={colors.accentText} />
+            <View style={{ flex: 1, gap: spacing.xs }} accessible accessibilityLabel={`Job site pinned at ${site.label}`}>
+              <AppText variant="callout" weight="600" numberOfLines={2} selectable>
+                {site.label}
+              </AppText>
+              <AppText variant="caption" tone={siteStale ? 'warning' : 'secondary'} tabular={!siteStale} selectable>
+                {siteStale ? 'Address changed. Find it again to move the pin.' : formatCoordinates(site.lat, site.lng)}
+              </AppText>
+            </View>
+            <PrimaryButton
+              title="Remove"
+              variant="ghost"
+              size="sm"
+              block={false}
+              accessibilityHint="Removes the job-site pin"
+              onPress={() => {
+                setSite(null);
+                haptics.tapLight();
+              }}
+            />
+          </View>
+        ) : null}
+      </View>
 
       <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: colors.surfaceElevated }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -220,6 +367,11 @@ export function ClientEditorSheet() {
                 onValueChange={setFenceRadius}
               />
             </Host>
+            {site ? null : (
+              <AppText variant="caption" tone="secondary">
+                Pin the site above (Find address or Use my current location) so reminders know where it is.
+              </AppText>
+            )}
             {permissionNote ? (
               <View style={{ gap: spacing.sm }}>
                 <AppText variant="caption" tone="warning">

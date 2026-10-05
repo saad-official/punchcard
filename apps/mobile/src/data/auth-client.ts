@@ -22,7 +22,10 @@ export const authClient = createAuthClient({
 export const useSession = authClient.useSession;
 
 /** fetch() against the Punchcard API with the signed-in session cookie. */
-export async function authedFetch(path: string, init: { method?: string; body?: unknown } = {}): Promise<Response> {
+export async function authedFetch(
+  path: string,
+  init: { method?: string; body?: unknown; signal?: AbortSignal } = {},
+): Promise<Response> {
   const cookie = await authClient.getCookie();
   return fetch(`${API_URL}${path}`, {
     method: init.method ?? 'GET',
@@ -32,5 +35,6 @@ export async function authedFetch(path: string, init: { method?: string; body?: 
     },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     credentials: 'omit',
+    signal: init.signal,
   });
 }

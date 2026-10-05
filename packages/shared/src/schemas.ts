@@ -13,6 +13,8 @@ export const PlanSchema = z.enum(["free", "pro"]);
 export const EntrySourceSchema = z.enum(["manual", "geofence", "widget", "live_activity"]);
 export const RoundingSchema = z.enum(["none", "1", "6", "15"]);
 export const RoundingModeSchema = z.enum(["nearest", "up", "down"]);
+/** Light/dark override; `system` follows the OS. */
+export const AppearanceSchema = z.enum(["system", "light", "dark"]);
 
 const syncFields = {
   createdAt: IsoTimestamp,
@@ -71,6 +73,18 @@ export const EntryPhotoSchema = z.object({
   ...syncFields,
 });
 
+/** Business details printed on branded (Pro) PDF timesheets. Empty strings mean "not set". */
+export const BusinessDetailsSchema = z.object({
+  name: z.string().trim().max(120).default(""),
+  phone: z.string().trim().max(40).default(""),
+  email: z
+    .string()
+    .trim()
+    .max(120)
+    .refine((v) => v === "" || /^\S+@\S+\.\S+$/.test(v), "That email address looks incomplete.")
+    .default(""),
+});
+
 export const SettingsSchema = z.object({
   rounding: RoundingSchema.default("none"),
   roundingMode: RoundingModeSchema.default("nearest"),
@@ -78,7 +92,12 @@ export const SettingsSchema = z.object({
   weekStartsOn: z.number().int().min(0).max(6).default(1),
   currency: CurrencySchema.default("USD"),
   nudgeAfterHours: z.number().positive().max(24).default(10),
+  /** Accent id from the app's curated list (`safety`, `signal`, `hivis`, `survey`). */
   accent: z.string().optional(),
+  appearance: AppearanceSchema.default("system"),
+  business: BusinessDetailsSchema.default({ name: "", phone: "", email: "" }),
+  /** Stable id of this install, sent as the sync `deviceId`. Generated on first read by the app. */
+  deviceId: z.string().min(1).optional(),
   onboarded: z.boolean().default(false),
 });
 
@@ -130,6 +149,8 @@ export type Plan = z.infer<typeof PlanSchema>;
 export type EntrySource = z.infer<typeof EntrySourceSchema>;
 export type Rounding = z.infer<typeof RoundingSchema>;
 export type RoundingMode = z.infer<typeof RoundingModeSchema>;
+export type Appearance = z.infer<typeof AppearanceSchema>;
+export type BusinessDetails = z.infer<typeof BusinessDetailsSchema>;
 export type Client = z.infer<typeof ClientSchema>;
 export type Job = z.infer<typeof JobSchema>;
 export type Entry = z.infer<typeof EntrySchema>;

@@ -10,7 +10,7 @@ export { fontWeight, motion, radius, shadows, spacing, type } from '@punchcard/s
 export type { ColorScheme, RadiusToken, ShadowLevel, SpacingToken, TypeToken } from '@punchcard/shared/tokens';
 export { ACCENTS, DEFAULT_ACCENT, resolveAccent, type AccentDefinition, type AccentId } from './accents';
 export { overline, tabular, textStyles, typeStyle } from './typography';
-export { buildTheme, useTheme, type Theme, type ThemeColors } from './use-theme';
+export { buildTheme, useAppearanceOverride, useTheme, type Theme, type ThemeColors } from './use-theme';
 
 /** Reanimated `withTiming` easings built from the motion tokens. */
 export const easing = {

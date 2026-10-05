@@ -6,7 +6,8 @@ import {
   type ColorScheme,
   type ShadowLevel,
 } from '@punchcard/shared/tokens';
-import { useColorScheme } from 'react-native';
+import { useEffect } from 'react';
+import { Appearance, useColorScheme } from 'react-native';
 
 import { useSettings } from '@/hooks/use-settings';
 
@@ -72,11 +73,24 @@ export function buildTheme(scheme: ColorScheme, accentId: string | undefined | n
 }
 
 /**
- * The resolved theme: shared tokens for the current colour scheme, with the user's accent
- * (`settings.accent`) applied. Referentially stable per scheme + accent.
+ * The resolved theme: shared tokens for the current colour scheme (`settings.appearance`
+ * override, else the OS), with the user's accent (`settings.accent`) applied. Referentially
+ * stable per scheme + accent.
  */
 export function useTheme(): Theme {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const { accent } = useSettings();
+  const system = useColorScheme();
+  const { accent, appearance } = useSettings();
+  const scheme: ColorScheme = appearance === 'system' ? (system === 'dark' ? 'dark' : 'light') : appearance;
   return buildTheme(scheme, accent);
+}
+
+/**
+ * Mirrors `settings.appearance` into the OS-level override so native chrome (alerts, pickers,
+ * keyboards, `@expo/ui` hosts) matches. Mount once in the root layout, after migrations.
+ */
+export function useAppearanceOverride(): void {
+  const { appearance } = useSettings();
+  useEffect(() => {
+    Appearance.setColorScheme(appearance === 'system' ? 'unspecified' : appearance);
+  }, [appearance]);
 }

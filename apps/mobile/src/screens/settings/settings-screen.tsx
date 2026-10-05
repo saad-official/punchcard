@@ -17,23 +17,22 @@ import { currencyOptions, LINKS, NUDGE_HOURS } from '@/constants/app';
 import { WEEKDAY_NAMES } from '@/constants/format';
 import { authClient, useSession } from '@/data/auth-client';
 import {
-  clockOut,
-  deleteClient,
-  deleteEntry,
-  deleteJob,
+  deleteAllData,
   deviceTimeZone,
-  getRunningEntry,
   listClients,
   listEntries,
+  listGeofencedClients,
   listJobs,
   seedDemoData,
   setSetting,
+  type Appearance,
   type Rounding,
   type RoundingMode,
 } from '@/data';
-import { setPreferences, usePreferences, type AppearancePreference } from '@/hooks/use-preferences';
+import { pendingChanges, syncNow, type SyncNowResult } from '@/data/sync-client';
 import { useSettings } from '@/hooks/use-settings';
 import { exportCsv } from '@/native/exports';
+import { syncGeofences } from '@/native/geofence';
 import * as haptics from '@/native/haptics';
 import {
   getNotificationPermission,
@@ -42,8 +41,6 @@ import {
 } from '@/native/notifications';
 import { logOut, restorePurchases, showManageSubscriptions, usePlan } from '@/native/purchases';
 import { ACCENTS, spacing, useTheme } from '@/theme';
-
-import { pendingChanges, syncNow } from './sync-now';
 
 const ROUNDING: { label: string; value: Rounding }[] = [
   { label: 'Exact', value: 'none' },
@@ -56,7 +53,7 @@ const ROUNDING_MODE: { label: string; value: RoundingMode }[] = [
   { label: 'Up', value: 'up' },
   { label: 'Down', value: 'down' },
 ];
-const APPEARANCE: { label: string; value: AppearancePreference }[] = [
+const APPEARANCE: { label: string; value: Appearance }[] = [
   { label: 'System', value: 'system' },
   { label: 'Light', value: 'light' },
   { label: 'Dark', value: 'dark' },
@@ -66,7 +63,6 @@ const FAR_FUTURE = '2100-01-01T00:00:00.000Z';
 
 export function SettingsScreen() {
   const settings = useSettings();
-  const prefs = usePreferences();
   const plan = usePlan();
   const { scheme } = useTheme();
 
@@ -155,7 +151,7 @@ export function SettingsScreen() {
           <ListRow
             title="Theme"
             trailing={
-              <Select accessibilityLabel="Theme" value={prefs.appearance} options={APPEARANCE} onChange={(v) => setPreferences({ appearance: v })} />
+              <Select accessibilityLabel="Theme" value={settings.appearance} options={APPEARANCE} onChange={(v) => setSetting('appearance', v)} />
             }
           />
         </ListGroup>
@@ -163,7 +159,7 @@ export function SettingsScreen() {
 
       <Section title="Business" footer="Printed on branded PDF timesheets (Pro).">
         <ListGroup>
-          <ListRow title="Business details" value={prefs.businessName || 'Not set'} onPress={() => router.push('/settings/business')} />
+          <ListRow title="Business details" value={settings.business.name || 'Not set'} onPress={() => router.push('/settings/business')} />
         </ListGroup>
       </Section>
 
@@ -240,11 +236,10 @@ function AccountSection() {
     if (result.ok) {
       haptics.success();
       setLastSync(new Date().toISOString());
-      showToast({ message: result.accepted ? `Synced ${result.accepted} changes` : 'Everything is up to date' });
-    } else {
-      haptics.warning();
-      showToast({ message: result.message });
-    }
+      // A pulled client may have a new job site: re-register geofences (Pro).
+      if (result.pull.applied) syncGeofences(listGeofencedClients(), plan).catch(() => undefined);
+    } else haptics.warning();
+    showToast({ message: syncMessage(result) });
   };
 
   return (
@@ -283,6 +278,19 @@ function AccountSection() {
       </ListGroup>
     </Section>
   );
+}
+
+const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
+
+/** Toast text for "Sync now" (push, then pull). */
+function syncMessage(result: SyncNowResult): string {
+  if (!result.ok) {
+    return result.stage === 'pull' && result.sent ? `Sent ${plural(result.sent, 'change')}, but downloading failed. ${result.message}` : result.message;
+  }
+  const { push, pull } = result;
+  if (!push.sent && !pull.applied) return 'Everything is up to date';
+  if (push.sent && pull.applied) return `Sent ${push.sent}, received ${pull.applied} changes`;
+  return push.sent ? `Sent ${plural(push.sent, 'change')}` : `Received ${plural(pull.applied, 'change')}`;
 }
 
 const permissionLabel = (p: NotificationPermissionStatus | null) =>
@@ -370,21 +378,21 @@ function DataSection() {
   const wipe = () =>
     Alert.alert(
       'Delete all data?',
-      'Every client, job and time entry on this phone is removed. Export first if you need a copy. This cannot be undone.',
+      'Every client, job, time entry and photo record on this phone is removed. Settings and any synced account copy stay. Export first if you need a copy. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete everything',
           style: 'destructive',
           onPress: () => {
-            if (getRunningEntry()) clockOut();
-            for (const e of listEntries({ from: EPOCH, to: FAR_FUTURE })) deleteEntry(e.id);
-            for (const c of listClients({ includeArchived: true })) {
-              for (const j of listJobs(c.id, { includeArchived: true })) deleteJob(j.id);
-              deleteClient(c.id);
+            try {
+              deleteAllData();
+              haptics.warning();
+              showToast({ message: 'All data deleted' });
+            } catch {
+              haptics.warning();
+              showToast({ message: 'Could not delete your data. Nothing was removed.' });
             }
-            haptics.warning();
-            showToast({ message: 'All data deleted' });
           },
         },
       ],

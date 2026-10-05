@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS, SettingsSchema } from '@punchcard/shared';
 import { inArray } from 'drizzle-orm';
 
 import { db } from './db';
-import { nowIso } from './ids';
+import { newId, nowIso } from './ids';
 import { settings } from './schema';
 import { notifyTables } from './store';
 import type { Settings } from './types';
@@ -58,7 +58,19 @@ export function setSetting<K extends SettingKey>(key: K, value: Settings[K]): Se
   return setSettings({ [key]: value } as Partial<Settings>);
 }
 
-/** Reset the given keys (or all) to defaults. */
+/**
+ * Stable id of this install (the sync `deviceId`). Created with `newId()` and stored in
+ * `settings.deviceId` on first read. Do not call from render: the first call writes.
+ */
+export function getDeviceId(): string {
+  const existing = getSetting('deviceId');
+  if (existing) return existing;
+  const id = newId();
+  setSetting('deviceId', id);
+  return id;
+}
+
+/** Reset the given keys (or all) to defaults. `deviceId` is regenerated on the next `getDeviceId()`. */
 export function resetSettings(keys?: SettingKey[]): void {
   if (keys) db.delete(settings).where(inArray(settings.key, keys)).run();
   else db.delete(settings).run();

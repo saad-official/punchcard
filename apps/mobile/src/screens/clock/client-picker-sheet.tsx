@@ -12,9 +12,9 @@ import { PrimaryButton } from '@/components/primary-button';
 import { openPaywall } from '@/components/pro-badge';
 import { showToast } from '@/components/toast';
 import { money } from '@/constants/format';
-import { dayRange, switchJob, type Client } from '@/data';
+import { switchJob, type Client } from '@/data';
 import { useClients, useJobs } from '@/hooks/use-clients';
-import { useEntries } from '@/hooks/use-entries';
+import { useRunningEntryRow } from '@/hooks/use-running-entry';
 import * as haptics from '@/native/haptics';
 import { usePlan } from '@/native/purchases';
 import { radius, spacing, touchTarget, useTheme } from '@/theme';
@@ -28,7 +28,7 @@ export function ClientPickerSheet() {
   const { colors } = useTheme();
   const clients = useClients();
   const plan = usePlan();
-  const running = useEntries(dayRange()).find((e) => !e.endedAt) ?? null;
+  const running = useRunningEntryRow();
 
   const choose = (client: Client, jobId: string | null, jobName: string | null) => {
     if (running && (switching || running.clientId !== client.id || (running.jobId ?? null) !== jobId)) {

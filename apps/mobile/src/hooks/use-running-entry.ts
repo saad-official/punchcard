@@ -22,7 +22,7 @@ export type RunningEntryState = {
  * stored timestamps on every tick, so it is correct after backgrounding or an app kill.
  */
 export function useRunningEntry(): RunningEntryState | null {
-  const entry = useLiveQuery('running', ['entries', 'clients', 'jobs'], getRunningEntryWithClient, null);
+  const entry = useRunningEntryRow();
   const nowSec = useNowSeconds(entry != null);
   if (!entry) return null;
   const seconds = elapsedSeconds(entry, new Date(nowSec * 1000).toISOString());
@@ -36,4 +36,9 @@ export function useRunningEntry(): RunningEntryState | null {
     currentBreakSeconds,
     earningsCents: earningsFor(seconds, entry.hourlyRateCents),
   };
+}
+
+/** The running entry joined with its client/job, without the 1-second tick (null when idle). */
+export function useRunningEntryRow(): EntryWithClient | null {
+  return useLiveQuery('running', ['entries', 'clients', 'jobs'], getRunningEntryWithClient, null);
 }

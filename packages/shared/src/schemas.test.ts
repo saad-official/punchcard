@@ -115,6 +115,32 @@ describe("SettingsSchema", () => {
     expect(SettingsSchema.safeParse({ rounding: "5" }).success).toBe(false);
     expect(SettingsSchema.safeParse({ weekStartsOn: 7 }).success).toBe(false);
   });
+  it("defaults appearance to system, empty business details and no device id", () => {
+    expect(DEFAULT_SETTINGS.appearance).toBe("system");
+    expect(DEFAULT_SETTINGS.business).toEqual({ name: "", phone: "", email: "" });
+    expect(DEFAULT_SETTINGS.deviceId).toBeUndefined();
+  });
+  it("accepts light/dark appearance and rejects anything else", () => {
+    expect(SettingsSchema.parse({ appearance: "dark" }).appearance).toBe("dark");
+    expect(SettingsSchema.parse({ appearance: "light" }).appearance).toBe("light");
+    expect(SettingsSchema.safeParse({ appearance: "sepia" }).success).toBe(false);
+  });
+  it("trims business details and fills missing fields", () => {
+    const s = SettingsSchema.parse({ business: { name: "  Harbour Plumbing ", email: "jo@harbour.example" } });
+    expect(s.business).toEqual({ name: "Harbour Plumbing", phone: "", email: "jo@harbour.example" });
+  });
+  it("rejects an incomplete business email but allows an empty one", () => {
+    expect(SettingsSchema.safeParse({ business: { email: "jo@harbour" } }).success).toBe(false);
+    expect(SettingsSchema.safeParse({ business: { email: "" } }).success).toBe(true);
+  });
+  it("keeps a device id and rejects an empty one", () => {
+    expect(SettingsSchema.parse({ deviceId: ID }).deviceId).toBe(ID);
+    expect(SettingsSchema.safeParse({ deviceId: "" }).success).toBe(false);
+  });
+  it("keeps accent as an optional string", () => {
+    expect(SettingsSchema.parse({ accent: "hivis" }).accent).toBe("hivis");
+    expect(DEFAULT_SETTINGS.accent).toBeUndefined();
+  });
 });
 
 describe("DeviceSchema and EntitlementSchema", () => {

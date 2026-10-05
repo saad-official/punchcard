@@ -7,7 +7,7 @@ describe("package entry", () => {
       "splitAtMidnight", "earningsCents", "formatMoney", "startOfWeek", "weekRange", "bucketEntriesByDay",
       "bucketEntriesByWeek", "dayKey", "clockIn", "switchJob", "startBreak", "endBreak", "clockOut", "nudgeAt",
       "summarize", "toCsvRows", "csvEscape", "timesheetModel", "historyFloor", "gate", "canAddClient", "mergeRows",
-      "diffDirty", "applyPull", "haversineMeters", "isInside", "transition", "geofenceNudge",
+      "diffDirty", "applyPull", "pullCursor", "planRemoteApply", "acceptPulledPhoto", "deferConflictingRunning", "formatAddressLabel", "formatCoordinates", "AppearanceSchema", "BusinessDetailsSchema", "haversineMeters", "isInside", "transition", "geofenceNudge",
     ];
     for (const n of names) expect(shared, n).toHaveProperty(n);
   });

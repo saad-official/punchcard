@@ -1,4 +1,4 @@
-import { applyPull, diffDirty, mergeRows, pickWinner, rowVersion } from "./sync";
+import { acceptPulledPhoto, applyPull, deferConflictingRunning, diffDirty, mergeRows, pickWinner, planRemoteApply, pullCursor, rowVersion } from "./sync";
 
 type Row = { id: string; updatedAt: string; deletedAt?: string | null; v?: string };
 
@@ -91,5 +91,69 @@ describe("applyPull", () => {
   it("is a no-op for an empty pull", () => {
     const local = [row("a", T1)];
     expect(applyPull(local, [])).toEqual({ rows: local, applied: [], kept: [] });
+  });
+});
+
+describe("pullCursor", () => {
+  it("is the oldest per-table cursor", () => {
+    expect(pullCursor([T2, T1, T3])).toBe(T1);
+  });
+  it("is undefined (full pull) when any table was never pulled", () => {
+    expect(pullCursor([T2, null, T3])).toBeUndefined();
+    expect(pullCursor([])).toBeUndefined();
+  });
+});
+
+describe("planRemoteApply", () => {
+  it("upserts only remote winners that differ from the local copy", () => {
+    const plan = planRemoteApply([row("a", T1, { v: "old" }), row("b", T3), row("d", T1, { v: "same" })], [row("a", T2), row("b", T2), row("c", T2), row("d", T1, { v: "same" })]);
+    expect(plan.upserts.map((r) => r.id)).toEqual(["a", "c"]);
+    expect(plan.kept).toEqual(["b"]);
+    expect(plan.skipped).toEqual([]);
+  });
+  it("skips rows the accept filter refuses", () => {
+    const plan = planRemoteApply([row("a", T1)], [row("a", T2), row("new", T2)], (_remote, local) => local !== undefined);
+    expect(plan.upserts.map((r) => r.id)).toEqual(["a"]);
+    expect(plan.skipped).toEqual(["new"]);
+  });
+});
+
+describe("acceptPulledPhoto", () => {
+  it("accepts updates and tombstones for photos already on this device", () => {
+    expect(acceptPulledPhoto({ remoteUrl: null }, { id: "p" })).toBe(true);
+  });
+  it("refuses a new photo with no uploaded copy (its file lives on another phone)", () => {
+    expect(acceptPulledPhoto({ remoteUrl: null }, undefined)).toBe(false);
+    expect(acceptPulledPhoto({ remoteUrl: "https://cdn.example/p.jpg" }, undefined)).toBe(true);
+  });
+});
+
+describe("deferConflictingRunning", () => {
+  type E = Row & { startedAt: string; endedAt?: string | null };
+  const entry = (id: string, startedAt: string, endedAt: string | null, extra: Partial<E> = {}): E => ({ id, updatedAt: T3, startedAt, endedAt, ...extra });
+
+  it("applies everything when nothing would run twice", () => {
+    const out = deferConflictingRunning(null, [entry("a", T1, T2), entry("b", T2, null)]);
+    expect(out.apply.map((e) => e.id)).toEqual(["a", "b"]);
+    expect(out.deferred).toEqual([]);
+  });
+  it("defers a remote running entry while another entry runs here", () => {
+    const out = deferConflictingRunning("local", [entry("a", T1, T2), entry("remote", T2, null)]);
+    expect(out.apply.map((e) => e.id)).toEqual(["a"]);
+    expect(out.deferred).toEqual(["remote"]);
+  });
+  it("applies a remote running entry once the local one is stopped by the same pull", () => {
+    const out = deferConflictingRunning("local", [entry("local", T1, T2), entry("remote", T2, null)]);
+    expect(out.apply.map((e) => e.id)).toEqual(["local", "remote"]);
+    expect(out.deferred).toEqual([]);
+  });
+  it("treats an update of the local running entry as the same entry", () => {
+    const out = deferConflictingRunning("local", [entry("local", T1, null, { v: "note" })]);
+    expect(out.apply.map((e) => e.id)).toEqual(["local"]);
+  });
+  it("ignores deleted running rows and keeps only the latest of several remote running rows", () => {
+    const out = deferConflictingRunning(null, [entry("old", T1, null), entry("gone", T3, null, { deletedAt: T3 }), entry("new", T2, null)]);
+    expect(out.apply.map((e) => e.id)).toEqual(["gone", "new"]);
+    expect(out.deferred).toEqual(["old"]);
   });
 });

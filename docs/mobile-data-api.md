@@ -40,6 +40,9 @@ export default function RootLayout() {
   nudge in sync with every repository write and refreshes earnings labels once a minute.
   Screens never call the native surfaces after clock actions: calling the repository is enough.
 - Data hooks return empty fallbacks until migrations finish; gate on `success` as above.
+- The first component rendered after migrations calls `useAppearanceOverride()` (`@/theme`): it
+  mirrors `settings.appearance` into `Appearance.setColorScheme` so native chrome follows the
+  override. `useTheme()` already resolves the scheme from the setting, so there is no flash.
 
 ## 2. Hooks (reactive reads)
 
@@ -54,6 +57,8 @@ written. Results are referentially stable between writes.
 | `useEntries(range, { clientId? })` (`@/hooks/use-entries`) | `EntryWithClient[]` overlapping `[from, to)`, newest first, running included | `const entries = useEntries({ from: week.start, to: week.end });` |
 | `useRecentClientIds(limit = 3)` | `string[]` of recently used active clients | `const quick = useRecentClientIds(3);` |
 | `useEntryPhotos(entryId)` | `EntryPhoto[]` | `const photos = useEntryPhotos(entry.id);` |
+| `useIsRunning()` (`@/hooks/use-is-running`) | `boolean`; no tick, re-renders only when it flips. Use for idle/running layout switches | `const running = useIsRunning();` |
+| `useRunningEntryRow()` (`@/hooks/use-running-entry`) | `EntryWithClient \| null` without the 1 s tick (which client/job runs) | `const running = useRunningEntryRow();` |
 | `useRunningEntry()` (`@/hooks/use-running-entry`) | `RunningEntryState \| null`: `{ entry: EntryWithClient, elapsedSeconds, onBreak, currentBreakSeconds, earningsCents }`, ticks every second, derived from timestamps | `const running = useRunningEntry();` |
 | `useTodayTotals()` (`@/hooks/use-today-totals`) | `DayTotals`: `{ totalSeconds, earningsCents, entryCount, byClient[] }` for the local day; ticks while running | `const today = useTodayTotals();` |
 | `useSettings()` (`@/hooks/use-settings`) | `Settings` (shared schema, defaults applied) | `const { weekStartsOn, currency } = useSettings();` |
@@ -84,7 +89,7 @@ transaction, mark the row dirty for sync, and notify subscribers.
 | `archiveClient(id)` / `unarchiveClient(id)` / `deleteClient(id)` | soft; entries keep their client |
 | `listJobs(clientId, { includeArchived? }): Job[]` | |
 | `getJob(id)` / `createJob(clientId, name)` / `renameJob(id, name)` | `createJob(client.id, 'Tiling')` |
-| `archiveJob(id)` / `unarchiveJob(id)` / `deleteJob(id)` | |
+| `archiveJob(id)` / `unarchiveJob(id)` / `deleteJob(id)` / `restoreJob(id)` | soft; job delete shows an Undo toast that calls `restoreJob` |
 
 ### Clock and entries (`entries-repo.ts`)
 Clock actions run the pure state machine from `@punchcard/shared/running` and persist its
@@ -106,18 +111,59 @@ nothing changed, so `if (t.events.length) haptics.clockIn()`.
 | `updateEntry(id, patch: EntryPatch, editedNote?)` | audit note shown on exports | `updateEntry(id, { endedAt }, 'Forgot to stop')` |
 | `duplicateEntry(id): Entry \| null` | finished entries only | |
 | `deleteEntry(id)` / `restoreEntry(id)` | soft delete + undo | |
-| `listPhotos(entryId)` / `addPhoto(entryId, localUri)` / `removePhoto(id)` | URIs from `expo-image-picker` (UI may call the picker; it is a plain module) | |
+| `listPhotos(entryId)` / `getPhoto(id)` / `addPhoto(entryId, localUri)` / `removePhoto(id)` | URIs from `expo-image-picker` (UI may call the picker; it is a plain module) | |
 
 ### Settings (`settings-repo.ts`)
 `getSettings(): Settings`, `getSetting(key)`, `setSetting(key, value)`, `setSettings(patch)`
 (validated with `SettingsSchema`, throws `ZodError` on bad input), `resetSettings(keys?)`,
-`DEFAULT_SETTINGS`. Keys: `rounding` (`'none'|'1'|'6'|'15'`), `roundingMode`, `weekStartsOn`
-(0–6), `currency`, `nudgeAfterHours`, `accent?`, `onboarded`.
-Example: `setSetting('onboarded', true)`.
+`DEFAULT_SETTINGS`, `getDeviceId()`. Keys: `rounding` (`'none'|'1'|'6'|'15'`), `roundingMode`,
+`weekStartsOn` (0–6), `currency`, `nudgeAfterHours`, `accent?` (accent id from `@/theme` `ACCENTS`),
+`appearance` (`'system'|'light'|'dark'`, default `'system'`), `business` (`{ name, phone, email }`,
+trimmed, empty string = not set, email must look like an address; printed on branded PDFs),
+`deviceId?` (sync device id), `onboarded`.
+`getDeviceId()` returns `settings.deviceId`, creating it with `newId()` on the first call (it
+writes, so call it from actions, not during render). No UI preference lives in SecureStore any
+more; SecureStore only holds the Better Auth session.
+Examples: `setSetting('onboarded', true)`, `setSetting('appearance', 'dark')`,
+`setSetting('business', { name: 'Harbour Plumbing', phone: '', email: 'jo@harbour.example' })`.
 
 ### Sync bookkeeping (`sync-state-repo.ts`)
 `getSyncState(table)` → `{ lastPulledAt, dirtyIds }`, `clearDirty(table, sentIds)`,
-`setLastPulledAt(table, serverTime)`. Tables: `clients | jobs | entries | entry_photos`.
+`setLastPulledAt(table, serverTime)`, `resetSyncState(tx)`. Tables: `clients | jobs | entries | entry_photos`.
+
+### Remote writes (`remote-repo.ts`)
+Used by the sync client. These do **not** mark rows dirty.
+
+| Function | Notes |
+|---|---|
+| `upsertFromRemote(table, rows, tx?) → number` | insert-or-overwrite by id; entries are written finished-first so the single-running index holds; without `tx` it runs its own transaction and notifies the table |
+| `getRowsByIds(table, ids, tx?)` | local copies (tombstones included) for merging |
+| `normalizeRemoteRow(table, row)` | absent nullish wire fields become `null`, so comparisons with local rows match |
+
+### Sync client (`@/data/sync-client`, Pro + signed in)
+Not re-exported from `@/data` (keeps the auth client out of headless tasks). Requests go through
+`authedFetch` (Better Auth cookie) with a 30 s timeout.
+
+| Function | Notes |
+|---|---|
+| `pushChanges() → PushResult` | `POST /api/sync/push` with every dirty row (clients, jobs, entries, photo **metadata**) and `deviceId: getDeviceId()`; clears only ids whose row did not change while the request was in flight → `{ ok, sent, accepted, serverTime }` |
+| `pullSince(since = currentPullCursor()) → PullResult` | `GET /api/sync/pull?since=`; validates with `SyncPullResponseSchema`, merges each table with shared `planRemoteApply` (last write wins via `applyPull`), keeps one running entry with `deferConflictingRunning`, skips photos that only exist on another phone (`acceptPulledPhoto`), writes all tables in one transaction via `upsertFromRemote`, then sets every table's `lastPulledAt = serverTime` → `{ ok, received, applied, kept, deferred, skippedPhotos, serverTime }` |
+| `syncNow() → SyncNowResult` | push, then pull → `{ ok: true, push, pull }`, or a failure with `stage: 'push' \| 'pull'` |
+| `pendingChanges()` / `currentPullCursor()` | dirty row count / oldest per-table cursor (`undefined` = full pull) |
+
+Failures: `{ ok: false, reason: 'signed-out' | 'not-pro' | 'server' | 'network' | 'invalid-response', status?, message }`
+(`message` is toast-ready). Settings → Account → Sync now toasts e.g. "Sent 2, received 5 changes"
+and re-registers geofences when the pull changed rows.
+
+Pull rules: the cursor is the server's `serverTime` (it lags a few seconds; `applyPull` is
+idempotent, so overlap is harmless). A remote running entry is deferred while a different entry
+runs on this phone; it arrives once the other phone stops it (its `updatedAt` moves past the
+cursor). Local rows that are newer stay dirty and win on the next push.
+
+### Data maintenance (`maintenance-repo.ts`)
+`deleteAllData()`: one transaction hard-deletes `entry_photos`, `entries` (running one too), `jobs`
+and `clients`, and clears `sync_state`; settings stay. Nothing is pushed, so a synced account keeps
+its copy and the next (full) pull restores it. Photo files on disk are not removed.
 
 ### Misc
 `dayRange(date?, tz?) → { from, to }`, `deviceTimeZone()`, `earningsFor(seconds, rateCents)`,
@@ -195,6 +241,22 @@ Keys: `EXPO_PUBLIC_REVENUECAT_TEST_KEY` (debug/dev-client builds), and for relea
 `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (a Test Store key crashes
 release builds, so it is ignored there and purchases stay disabled). Entitlement id: `pro`.
 
+### `geocode.ts` (job sites)
+| Function | Notes |
+|---|---|
+| `geocodeAddress(address) → Promise<{ lat, lng, label } \| null>` | `null` = no match; label from reverse geocoding (shared `formatAddressLabel`, falls back to `formatCoordinates`) |
+| `currentPosition() → Promise<{ lat, lng, label }>` | balanced accuracy (~100 m); waits 15 s, then uses the last known fix (≤ 5 min old) |
+| `GeocodeError` (`reason: 'permission' \| 'services-disabled' \| 'unavailable'`, `canAskAgain`) | thrown for permission / service / platform failures; `message` is user-facing |
+
+Both request foreground ("While using") permission on demand (Android needs it for geocoding);
+geofencing still asks for "Always" separately. Platform geocoders (Apple / Google Play services),
+no API key, rate limited: call on an explicit tap, never per keystroke. Not available on web.
+
+Client editor flow: type the address, tap **Find address** (or the keyboard's search key); a
+confirmation row shows the resolved label and coordinates (Remove clears it; editing the address
+marks it stale). **Use my current location** is the alternative and fills an empty address. Save
+stores `lat`/`lng`; Pro clients with a pin and a radius are registered by `syncGeofences`.
+
 ### `exports.ts`
 `exportCsv(text, filename)` and `exportPdf(html, filename)` → `{ uri, shared }`. Build the text
 with shared `toCsv(toCsvRows(...))` / the HTML from `timesheetModel(...)`.
@@ -206,6 +268,10 @@ with shared `toCsv(toCsvRows(...))` / the HTML from `timesheetModel(...)`.
 apps/mobile/index.ts                         JS entry (background tasks, then expo-router)
 src/data/schema.ts, db.ts, migrate.ts         drizzle schema, connection (WAL), migrations
 src/data/*-repo.ts, store.ts, types.ts        repositories, change bus + live queries, types
+src/data/remote-repo.ts                       pulled-row writes (no dirty marks)
+src/data/maintenance-repo.ts                  deleteAllData
+src/data/sync-client.ts                       push / pull / syncNow (auth cookie)
+src/native/geocode.ts                         address and current-position lookup
 src/hooks/use-*.ts                            data hooks
 src/native/*.ts                               adapters (platform forks: .ios.ts / .android.ts)
 src/widgets/running-entry.activity.tsx        iOS Live Activity ('widget' function)
@@ -217,3 +283,22 @@ drizzle/                                      generated migrations (`pnpm --filt
 
 Schema changes: edit `src/data/schema.ts`, run `pnpm --filter mobile db:generate`, commit the new
 `drizzle/*.sql`, `meta/` and `migrations.js`. `drizzle/migrations.d.ts` is hand-written.
+
+## 6. Known gaps
+
+- **Binary photo upload.** Only photo metadata syncs (`localUri`; `remoteUrl` stays null). Pulled
+  photos that exist only on another phone are skipped until an upload endpoint (e.g. a signed
+  Vercel Blob upload) fills `remoteUrl`; `acceptPulledPhoto` then lets them through unchanged.
+  `deleteAllData` also leaves photo files on disk.
+- **Address autocomplete.** The editor geocodes the typed address on an explicit tap and takes the
+  first match. Suggestions while typing need a places API (key + quota) and a picker for
+  ambiguous results.
+- **APNs / FCM push-to-update.** Sync is manual ("Sync now"). Nothing tells a phone that another
+  device pushed; a silent push (or a pull on foreground / after clock actions) is still to do.
+- **Settings do not sync.** `appearance`, `business`, `accent` and the rest stay per device;
+  `deviceId` must never sync.
+- **Old SecureStore preferences are not migrated.** Dev builds that stored theme / business
+  details in SecureStore (`punchcard.ui-preferences`, `punchcard.device-id`) start from defaults
+  once and get a new sync device id.
+- **Deferred running entries.** A running entry from another phone is not shown while this phone
+  runs a different one; it appears after that phone stops it.

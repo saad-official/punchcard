@@ -33,7 +33,6 @@ import { dayRange, deviceTimeZone, type EntryWithClient } from '@/data';
 import { useClients } from '@/hooks/use-clients';
 import { useEntries } from '@/hooks/use-entries';
 import { useNowSeconds } from '@/hooks/use-now';
-import { usePreferences } from '@/hooks/use-preferences';
 import { useSettings } from '@/hooks/use-settings';
 import { exportCsv, exportPdf } from '@/native/exports';
 import * as haptics from '@/native/haptics';
@@ -79,7 +78,7 @@ function periodRange(period: Period, nowIso: string, weekStartsOn: number, tz: s
 export function ReportsScreen() {
   const settings = useSettings();
   const plan = usePlan();
-  const prefs = usePreferences();
+  const { business } = settings;
   const { colors, scheme } = useTheme();
   const tz = deviceTimeZone();
   const nowSec = useNowSeconds(false);
@@ -134,13 +133,13 @@ export function ReportsScreen() {
           locale: LOCALE,
           jobs,
           title: filterClient ? `${filterClient.name} timesheet` : 'Timesheet',
-          brand: useBrand ? { businessName: prefs.businessName || undefined, accentHex: colors.accent } : null,
+          brand: useBrand ? { businessName: business.name || undefined, accentHex: colors.accent } : null,
         });
         const editedNotes: Record<string, string> = {};
         for (const e of entries) if (e.editedNote) editedNotes[e.id] = e.editedNote;
         const html = timesheetHtml(model, {
           branded: useBrand,
-          business: { name: prefs.businessName, phone: prefs.businessPhone, email: prefs.businessEmail },
+          business,
           bandHex: filterClient ? clientColorHex(filterClient.color) : colors.accent,
           editedNotes,
         });
@@ -283,8 +282,8 @@ export function ReportsScreen() {
               </View>
               <AppText variant="caption" tone="secondary">
                 {canBrand
-                  ? prefs.businessName
-                    ? `Colour header with ${prefs.businessName} and your contact details.`
+                  ? business.name
+                    ? `Colour header with ${business.name} and your contact details.`
                     : 'Colour header. Add your business name in Settings > Business details.'
                   : 'Colour header with your business name and contact details.'}
               </AppText>

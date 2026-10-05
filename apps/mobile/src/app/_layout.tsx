@@ -10,12 +10,11 @@ import { EmptyState } from '@/components/empty-state';
 import { PrimaryButton } from '@/components/primary-button';
 import { showToast, ToastHost } from '@/components/toast';
 import { ensureDatabaseReady, useDatabaseMigrations } from '@/data';
-import '@/hooks/use-preferences';
 import { useSettings } from '@/hooks/use-settings';
 import * as haptics from '@/native/haptics';
 import type { StatusAction } from '@/native/live-status';
 import { startNativeServices } from '@/native/surface-sync';
-import { radius, spacing, useTheme } from '@/theme';
+import { radius, spacing, useAppearanceOverride, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -67,6 +66,7 @@ export default function RootLayout() {
 
 function App() {
   const { onboarded } = useSettings();
+  useAppearanceOverride();
   const theme = useTheme();
   const { colors, isDark } = theme;
 

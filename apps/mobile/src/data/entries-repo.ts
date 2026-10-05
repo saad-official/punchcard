@@ -308,6 +308,11 @@ export function listPhotos(entryId: string): EntryPhoto[] {
     .all();
 }
 
+/** One photo row by id (tombstones included), or null. */
+export function getPhoto(id: string): EntryPhoto | null {
+  return db.select().from(entryPhotos).where(eq(entryPhotos.id, id)).get() ?? null;
+}
+
 /** Attach a photo by local file URI (e.g. from expo-image-picker). */
 export function addPhoto(entryId: string, localUri: string): EntryPhoto {
   const now = nowIso();
