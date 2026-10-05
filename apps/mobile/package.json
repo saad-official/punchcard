@@ -3,9 +3,11 @@
   "main": "index.ts",
   "version": "1.0.0",
   "dependencies": {
+    "@better-auth/expo": "^1.7.7",
     "@expo/ui": "~57.0.21",
     "@punchcard/shared": "workspace:*",
     "@shopify/flash-list": "2.0.2",
+    "better-auth": "^1.7.7",
     "drizzle-orm": "^0.45.3",
     "expo": "~57.0.26",
     "expo-blur": "~57.0.3",
