@@ -7,15 +7,24 @@
     "icon": "./assets/images/icon.png",
     "scheme": "punchcard",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "bundleIdentifier": "com.saadofficial.punchcard",
       "icon": "./assets/expo.icon",
       "supportsTablet": false,
       "infoPlist": {
-        "NSSupportsLiveActivities": true,
-        "NSSupportsLiveActivitiesFrequentUpdates": true,
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,7 +35,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
@@ -42,6 +50,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/with-android-launch-mode",
       "expo-router",
       [
         "expo-splash-screen",
@@ -49,7 +58,108 @@
           "backgroundColor": "#15171A",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 96,
-          "dark": { "backgroundColor": "#0B0C0E" }
+          "dark": {
+            "backgroundColor": "#0B0C0E"
+          }
+        }
+      ],
+      "expo-dev-client",
+      "expo-updates",
+      "expo-sqlite",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#FF6A1A",
+          "defaultChannel": "nudges"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Punchcard uses your location to find a client's address and set a job-site geofence.",
+          "locationAlwaysAndWhenInUsePermission": "Allow \"Always\" so Punchcard can remind you to start or stop the clock when you arrive at or leave a job site, even when the app is closed.",
+          "locationAlwaysPermission": "Allow \"Always\" so Punchcard can remind you to start or stop the clock when you arrive at or leave a job site, even when the app is closed.",
+          "motionUsagePermission": false,
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-task-manager",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Attach job-site photos to your time entries.",
+          "cameraPermission": "Take job-site photos for your time entries.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.saadofficial.punchcard.widgets",
+          "groupIdentifier": "group.com.saadofficial.punchcard",
+          "frequentUpdates": true,
+          "widgets": [
+            {
+              "name": "TodayWidget",
+              "displayName": "Today",
+              "description": "Today's hours and the job on the clock.",
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium",
+                "accessoryCircular"
+              ],
+              "android": null
+            }
+          ]
+        }
+      ],
+      [
+        "expo-live-updates",
+        {
+          "channelId": "running",
+          "channelName": "Running timer"
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TodayWidget",
+              "label": "Punchcard today",
+              "description": "Today's hours and the job on the clock.",
+              "minWidth": "110dp",
+              "minHeight": "40dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 1,
+              "maxResizeWidth": "250dp",
+              "maxResizeHeight": "110dp",
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/widget-preview/today-2x1.png",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "TodayWidgetWide",
+              "label": "Punchcard today (wide)",
+              "description": "Today's hours, the running job and a start-last-job button.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/widget-preview/today-4x2.png",
+              "updatePeriodMillis": 1800000
+            }
+          ]
         }
       ]
     ],
