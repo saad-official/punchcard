@@ -1,0 +1,16 @@
+{
+  "name": "punchcard",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Punchcard: field time clock for tradespeople and micro-crews. Expo app (iOS + Android) with Live Activities, Android 16 Live Updates, widgets and timesheet exports, plus a Next.js landing site and sync API.",
+  "packageManager": "pnpm@12.8.1",
+  "engines": { "node": ">=22.13.0 || >=24.3.0" },
+  "scripts": {
+    "mobile": "pnpm --filter mobile start",
+    "web": "pnpm --filter web dev",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build:web": "pnpm --filter web build"
+  }
+}
