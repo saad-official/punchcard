@@ -72,4 +72,9 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return resolve(context, moduleName, platform);
 };
 
+// Metro's transform cache is shared across projects and keyed by the project-relative path, so
+// sibling apps with byte-identical files (drizzle/migrations.js + inline-imported .sql) would reuse
+// each other's output. A per-app cache version keeps the caches apart.
+config.cacheVersion = 'punchcard-v1';
+
 module.exports = config;
