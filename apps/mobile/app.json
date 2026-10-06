@@ -12,7 +12,8 @@
     },
     "updates": {
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/ce2c65e5-45e5-4b94-a5c0-9fce40bd65d1"
     },
     "ios": {
       "bundleIdentifier": "com.saadofficial.punchcard",
@@ -20,6 +21,9 @@
       "supportsTablet": false,
       "infoPlist": {
         "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification",
           "location",
           "fetch",
           "remote-notification"
@@ -42,7 +46,17 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.POST_PROMOTED_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.VIBRATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
@@ -166,6 +180,30 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.saadofficial.punchcard.widgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.saadofficial.punchcard"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "ce2c65e5-45e5-4b94-a5c0-9fce40bd65d1"
+      }
+    },
+    "owner": "sadi123"
   }
 }

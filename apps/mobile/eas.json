@@ -5,7 +5,9 @@
   },
   "build": {
     "base": {
-      "pnpm": "12.8.1"
+      "pnpm": "12.8.1",
+      "node": "22.20.0",
+      "channel": "base"
     },
     "development": {
       "extends": "base",
@@ -23,7 +25,8 @@
       "extends": "development",
       "ios": {
         "simulator": true
-      }
+      },
+      "channel": "development-simulator"
     },
     "preview": {
       "extends": "base",
