@@ -133,7 +133,7 @@ function DatabaseErrorScreen({ error }: { error: Error }) {
           icon={{ sf: 'externaldrive.badge.exclamationmark', md: 'database' }}
           title="Punchcard couldn't open its database"
           body="Nothing has been deleted. Try again; if it keeps failing, restart the app or contact support."
-          action={<PrimaryButton title="Try again" block={false} onPress={() => ensureDatabaseReady().catch(() => undefined)} />}
+          action={<PrimaryButton title="Try again" block={false} style={{ alignSelf: 'center' }} onPress={() => ensureDatabaseReady().catch(() => undefined)} />}
         />
         <AppText variant="caption" tone="secondary" selectable align="center">
           {error.message}

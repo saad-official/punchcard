@@ -104,7 +104,7 @@ export function ClientsScreen() {
               icon={{ sf: 'person.2.fill', md: 'group' }}
               title="Your clients live here"
               body="Add each customer or site with its hourly rate and a colour you'll recognise at a glance."
-              action={<PrimaryButton title="Add client" block={false} icon={{ sf: 'plus', md: 'add' }} onPress={() => newClient(plan)} />}
+              action={<PrimaryButton title="Add client" block={false} style={{ alignSelf: 'center' }} icon={{ sf: 'plus', md: 'add' }} onPress={() => newClient(plan)} />}
             />
           )
         }

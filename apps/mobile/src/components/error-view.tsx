@@ -20,7 +20,7 @@ export function ErrorView({ error, retry }: ErrorBoundaryProps) {
         icon={{ sf: 'exclamationmark.triangle', md: 'warning' }}
         title="This screen hit a problem"
         body="Your time is safe on this phone. Try again, and if it keeps happening, contact support with the message below."
-        action={<PrimaryButton title="Try again" onPress={retry} block={false} />}
+        action={<PrimaryButton title="Try again" onPress={retry} block={false} style={{ alignSelf: 'center' }} />}
       />
       <View style={{ paddingHorizontal: spacing.md }}>
         <AppText variant="caption" tone="secondary" selectable align="center">
