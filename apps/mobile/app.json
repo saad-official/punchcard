@@ -175,7 +175,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/with-androidx-work-fix.js"
     ],
     "experiments": {
       "typedRoutes": true,
