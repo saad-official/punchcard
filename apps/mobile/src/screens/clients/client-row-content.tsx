@@ -35,8 +35,8 @@ export function ClientRowContent({ client, weekSeconds, pressed }: { client: Cli
         </AppText>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Duration seconds={weekSeconds} variant="body" weight="600" tone={weekSeconds > 0 ? 'primary' : 'tertiary'} />
-        <AppText variant="caption" tone="tertiary">
+        <Duration seconds={weekSeconds} variant="body" weight="600" tone={weekSeconds > 0 ? 'primary' : 'secondary'} />
+        <AppText variant="caption" tone="secondary">
           this week
         </AppText>
       </View>

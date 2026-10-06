@@ -208,7 +208,7 @@ export function EntryEditorSheet() {
         </FormField>
       ) : null}
 
-      <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }}>
+      <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: colors.surfaceElevated }}>
         <Row label="Date">
           <DateField
             mode="date"

@@ -155,7 +155,7 @@ export function ClockScreen() {
               ))}
             </ListGroup>
           ) : (
-            <AppText variant="callout" tone="tertiary" style={{ paddingHorizontal: spacing.md }}>
+            <AppText variant="callout" tone="secondary" style={{ paddingHorizontal: spacing.md }}>
               Finished jobs from today show up here.
             </AppText>
           )}

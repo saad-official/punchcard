@@ -33,7 +33,7 @@ export function FormField({
           {error}
         </AppText>
       ) : hint ? (
-        <AppText variant="caption" tone="tertiary">
+        <AppText variant="caption" tone="secondary">
           {hint}
         </AppText>
       ) : null}

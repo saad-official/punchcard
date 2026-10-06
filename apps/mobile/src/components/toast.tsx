@@ -94,7 +94,7 @@ export function ToastHost() {
               opacity: pressed ? 0.6 : 1,
             })}
           >
-            <AppText variant="callout" weight="700" style={{ color: colors.accent }}>
+            <AppText variant="callout" weight="700" style={{ color: colors.inverseAccentText }}>
               {toast.actionLabel}
             </AppText>
           </Pressable>

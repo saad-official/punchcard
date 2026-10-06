@@ -117,7 +117,7 @@ export function AccountScreen() {
       </FormField>
 
       {error ? (
-        <View style={{ padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceSunken }}>
+        <View style={{ padding: spacing.md, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: colors.surfaceSunken }}>
           <AppText variant="callout" tone="danger" selectable accessibilityLiveRegion="polite">
             {error}
           </AppText>

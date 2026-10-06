@@ -28,9 +28,9 @@ export function ActionSheet({
   visible: boolean;
   onClose: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   return (
-    <Host matchContents style={{ position: 'absolute' }}>
+    <Host matchContents seedColor={colors.accent} colorScheme={scheme} style={{ position: 'absolute' }}>
       <BottomSheet isPresented={visible} onDismiss={onClose} containerColor={colors.surfaceElevated}>
         <View style={{ paddingBottom: spacing.lg }}>
           {title ? (

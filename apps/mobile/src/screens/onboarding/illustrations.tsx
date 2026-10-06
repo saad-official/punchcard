@@ -26,7 +26,7 @@ export function TapOnceArt() {
           borderRadius: radius.lg,
           borderCurve: 'continuous',
           backgroundColor: colors.surfaceElevated,
-          boxShadow: shadow('md'),
+          boxShadow: shadow('sm'),
         }}
       >
         <ClientBar color="teal" />
@@ -47,7 +47,6 @@ export function TapOnceArt() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: spacing.md,
-          boxShadow: shadow('lg'),
         }}
       >
         <Icon sf="play.fill" md="play_arrow" size={32} color={colors.onAccent} />
@@ -139,6 +138,7 @@ export function TimesheetArt() {
       style={{
         width: '100%',
         borderRadius: radius.md,
+        borderCurve: 'continuous',
         backgroundColor: paper.surfaceElevated,
         padding: spacing.lg,
         gap: spacing.sm,

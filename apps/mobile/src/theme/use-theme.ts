@@ -19,6 +19,8 @@ export type ThemeColors = ColorPalette & {
   /** Inverted surface for toasts and the Lock Screen mock. */
   inverseSurface: string;
   inverseText: string;
+  /** Accent text/link colour on `inverseSurface` (the toast action), from the opposite scheme. */
+  inverseAccentText: string;
   /** Dimmed backdrop behind transient overlays. */
   scrim: string;
 };
@@ -28,7 +30,10 @@ export type Theme = {
   isDark: boolean;
   accentId: AccentId;
   colors: ThemeColors;
-  /** CSS `boxShadow` for an elevation level (never legacy shadow props). */
+  /**
+   * CSS `boxShadow` for an elevation level (never legacy shadow/elevation props). Only for
+   * opaque, rounded, unclipped views: never on glass, blur or `overflow: 'hidden'` views.
+   */
   shadow: (level: ShadowLevel) => string;
 };
 
@@ -38,6 +43,21 @@ function hexToRgb(hex: string): string {
 }
 
 const SHADOW_RGB = hexToRgb(SHADOW_COLOR);
+/** Dark mode drops shadows below the charcoal page, so they read as depth instead of vanishing. */
+const DARK_DROP_RGB = hexToRgb(tokenColors.dark.surfaceSunken);
+
+/**
+ * Dark mode elevation. The token shadow colour is the dark page colour itself, so a charcoal
+ * shadow is invisible on the page and a muddy dark halo wherever a floating surface overlaps
+ * content (the sheet header, the toast). Elevation in dark mode comes from the lighter
+ * `surfaceElevated` fill plus a 1 pt separator rim, with a short, faint drop underneath.
+ */
+function darkShadow(level: ShadowLevel): string {
+  const s = shadows.dark[level];
+  const rim = `0px 0px 0px 1px ${tokenColors.dark.separator}`;
+  if (level === 'sm') return rim;
+  return `${rim}, ${s.offsetX}px ${s.offsetY / 2}px ${s.blur / 2}px ${s.spread / 2}px rgba(${DARK_DROP_RGB}, ${s.opacity / 2})`;
+}
 
 const cache = new Map<string, Theme>();
 
@@ -55,6 +75,7 @@ export function buildTheme(scheme: ColorScheme, accentId: string | undefined | n
     onDanger: scheme === 'dark' ? base.onAccent : tokenColors.light.surfaceElevated,
     inverseSurface: inverse.surfaceElevated,
     inverseText: inverse.text,
+    inverseAccentText: accent[scheme === 'dark' ? 'light' : 'dark'].accentText,
     scrim: `rgba(${SHADOW_RGB}, ${scheme === 'dark' ? 0.6 : 0.35})`,
   };
   const levels = shadows[scheme];
@@ -63,10 +84,13 @@ export function buildTheme(scheme: ColorScheme, accentId: string | undefined | n
     isDark: scheme === 'dark',
     accentId: accent.id,
     colors,
-    shadow: (level) => {
-      const s = levels[level];
-      return `${s.offsetX}px ${s.offsetY}px ${s.blur}px ${s.spread}px rgba(${SHADOW_RGB}, ${s.opacity})`;
-    },
+    shadow:
+      scheme === 'dark'
+        ? darkShadow
+        : (level) => {
+            const s = levels[level];
+            return `${s.offsetX}px ${s.offsetY}px ${s.blur}px ${s.spread}px rgba(${SHADOW_RGB}, ${s.opacity})`;
+          },
   };
   cache.set(key, theme);
   return theme;

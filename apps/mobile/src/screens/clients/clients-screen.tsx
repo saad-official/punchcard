@@ -50,7 +50,15 @@ export function ClientsScreen() {
 
   return (
     <>
-      <Stack.SearchBar placeholder="Search clients" onChangeText={(e) => setQuery(e.nativeEvent.text)} onCancelButtonPress={() => setQuery('')} />
+      <Stack.SearchBar
+        placeholder="Search clients"
+        onChangeText={(e) => setQuery(e.nativeEvent.text)}
+        onCancelButtonPress={() => setQuery('')}
+        tintColor={colors.accentText}
+        textColor={colors.text}
+        hintTextColor={colors.textTertiary}
+        headerIconColor={colors.text}
+      />
       <HeaderActions actions={[{ key: 'new', label: 'New client', sf: 'plus', md: 'add', onPress: () => newClient(plan) }]} />
       <FlashList
         data={rows}

@@ -264,7 +264,7 @@ function DayEntries({
 function HistoryLocked() {
   const { colors } = useTheme();
   return (
-    <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.accentSoft }}>
+    <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: colors.accentSoft }}>
       <AppText variant="body" weight="600">
         Older than 30 days
       </AppText>

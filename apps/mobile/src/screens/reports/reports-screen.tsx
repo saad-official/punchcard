@@ -1,5 +1,4 @@
 import { Host, Switch } from '@expo/ui';
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import {
   clientColorHex,
   formatDuration,
@@ -26,6 +25,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { openPaywall, ProBadge } from '@/components/pro-badge';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
+import { SegmentedControl } from '@/components/segmented-control';
 import { Select } from '@/components/select';
 import { showToast } from '@/components/toast';
 import { formatDate, formatDayShort, LOCALE } from '@/constants/format';
@@ -162,12 +162,10 @@ export function ReportsScreen() {
         <SegmentedControl
           values={PERIODS.map((p) => p.label)}
           selectedIndex={PERIODS.findIndex((p) => p.id === period)}
-          onChange={(e) => {
+          onChange={(index) => {
             haptics.tapLight();
-            setPeriod(PERIODS[e.nativeEvent.selectedSegmentIndex]?.id ?? 'this-week');
+            setPeriod(PERIODS[index]?.id ?? 'this-week');
           }}
-          tintColor={colors.accent}
-          appearance={scheme}
         />
         {period === 'custom' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' }}>
@@ -226,7 +224,7 @@ export function ReportsScreen() {
           </AppText>
         </View>
         {settings.rounding !== 'none' ? (
-          <AppText variant="caption" tone="tertiary">
+          <AppText variant="caption" tone="secondary">
             {`Rounded to ${settings.rounding} min (${settings.roundingMode}) per entry`}
           </AppText>
         ) : null}

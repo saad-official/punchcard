@@ -24,7 +24,7 @@ export function SectionHeader({
         {trailing}
       </View>
       {footnote ? (
-        <AppText variant="caption" tone="tertiary">
+        <AppText variant="caption" tone="secondary">
           {footnote}
         </AppText>
       ) : null}

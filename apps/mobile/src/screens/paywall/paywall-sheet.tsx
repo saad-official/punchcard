@@ -12,7 +12,7 @@ import { showToast } from '@/components/toast';
 import { LINKS, PRO_PRICES } from '@/constants/app';
 import * as haptics from '@/native/haptics';
 import { presentPaywall, restorePurchases, usePlan } from '@/native/purchases';
-import { hairline, radius, spacing, useTheme } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 
 const REASONS: Record<PaywallReason, string> = {
   clients: 'Free covers 3 active clients. Pro has no limit.',
@@ -134,7 +134,7 @@ export function PaywallSheet() {
       </ListGroup>
 
       {status === 'unavailable' ? (
-        <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, borderWidth: hairline, borderColor: colors.border }}>
+        <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: colors.surfaceSunken }}>
           <AppText variant="callout" weight="600">
             Purchases aren’t available in this build
           </AppText>
