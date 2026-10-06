@@ -43,14 +43,18 @@ function hexToRgb(hex: string): string {
 }
 
 const SHADOW_RGB = hexToRgb(SHADOW_COLOR);
-/** Dark mode drops shadows below the charcoal page, so they read as depth instead of vanishing. */
-const DARK_DROP_RGB = hexToRgb(tokenColors.dark.surfaceSunken);
+/**
+ * Dark mode drop colour: pure black, the only colour darker than the charcoal page. Never a
+ * token surface or ink colour (a lighter-than-page shadow draws a glowing halo).
+ */
+const DARK_DROP_RGB = '0, 0, 0';
 
 /**
  * Dark mode elevation. The token shadow colour is the dark page colour itself, so a charcoal
  * shadow is invisible on the page and a muddy dark halo wherever a floating surface overlaps
  * content (the sheet header, the toast). Elevation in dark mode comes from the lighter
- * `surfaceElevated` fill plus a 1 pt separator rim, with a short, faint drop underneath.
+ * `surfaceElevated` fill plus a crisp (unblurred) 1 pt separator rim, with a short, faint black
+ * drop underneath.
  */
 function darkShadow(level: ShadowLevel): string {
   const s = shadows.dark[level];

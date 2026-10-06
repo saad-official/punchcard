@@ -62,7 +62,10 @@ export function PrimaryButton({
 }: PrimaryButtonProps) {
   const { colors } = useTheme();
   const [pressed, setPressed] = useState(false);
-  const v = variantColors(variant, colors);
+  // Disabled reads as a sunken, tertiary-label control (no see-through 45% opacity fill).
+  const v = disabled
+    ? { bg: variant === 'ghost' ? 'transparent' : colors.surfaceSunken, bgPressed: colors.surfaceSunken, fg: colors.textTertiary }
+    : variantColors(variant, colors);
   const s = SIZES[size];
   const inactive = disabled || loading;
 
@@ -88,7 +91,6 @@ export function PrimaryButton({
           borderRadius: size === 'xl' ? radius.lg : radius.md,
           borderCurve: 'continuous',
           backgroundColor: pressed ? v.bgPressed : v.bg,
-          opacity: disabled ? 0.45 : 1,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',

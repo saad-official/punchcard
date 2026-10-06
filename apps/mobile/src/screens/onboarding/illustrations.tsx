@@ -71,7 +71,9 @@ export function LockScreenArt() {
         width: '100%',
         borderRadius: radius.lg + spacing.sm,
         borderCurve: 'continuous',
-        backgroundColor: c.surfaceSunken,
+        // Page charcoal with the dark rim, so the mock keeps an edge on the dark app page too.
+        backgroundColor: c.surface,
+        boxShadow: dark.shadow('sm'),
         padding: spacing.md,
         paddingTop: spacing.lg,
         gap: spacing.lg,

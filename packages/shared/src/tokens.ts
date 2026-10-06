@@ -62,7 +62,11 @@ export const colors = {
     /** Charcoal. */
     surface: "#15171A",
     surfaceElevated: "#1F2226",
-    surfaceSunken: "#0F1113",
+    /**
+     * Wells, inputs and secondary fills. Lifted above the page in dark mode (tonal fill, as on
+     * iOS/Material): a well darker than charcoal measured 1.05:1 and disappeared.
+     */
+    surfaceSunken: "#2C3035",
     text: "#F2EFE8",
     textSecondary: "#9CA4AE",
     textTertiary: "#6C737C",
@@ -74,7 +78,8 @@ export const colors = {
     success: "#46C47E",
     warning: "#E8A93F",
     danger: "#FF6E61",
-    separator: "#2C3035",
+    /** Hairlines: 1.4:1 on `surfaceElevated` (the old #2C3035 was 1.2:1 and vanished). */
+    separator: "#363B41",
     border: "#3A3F45",
   },
 } as const satisfies Record<ColorScheme, ColorPalette>;
